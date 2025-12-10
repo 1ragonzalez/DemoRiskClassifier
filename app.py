@@ -44,14 +44,16 @@ elif text_input.strip():
     protocol_text = text_input.strip()
 
 # -----------------------------
-# Risk name translation (Spanish → English)
+# Fixed risk name translation (Spanish -> English)
 # -----------------------------
 RISK_TRANSLATION = {
-    "riesgo_etico": "Ethical Risk",
-    "riesgo_financiero": "Financial Risk",
-    "riesgo_legal": "Legal Risk",
-    "riesgo_privacidad": "Privacy Risk",
-    "riesgo_seguridad": "Safety Risk"
+    "riesgo_resolucion_8430": "Regulatory Risk (Resolution 8430)",
+    "riesgo_poblacion_vulnerable": "Vulnerable Population Risk",
+    "riesgo_naturaleza_alcance": "Nature and Scope Risk",
+    "riesgo_biologico": "Biological Risk",
+    "riesgo_tratamiento_datos": "Data Processing Risk",
+    "riesgo_sistemas_seguridad_informacion": "Information Security Systems Risk",
+    "Financial Risk": "Financial Risk",
 }
 
 # -----------------------------
@@ -60,19 +62,19 @@ RISK_TRANSLATION = {
 if protocol_text:
     rows = []
     for risk in demo_risks:
-        m = demo_models[risk]
-        p = m.predict_proba([protocol_text])[0][1]  # probability of class "risk present"
+        model = demo_models[risk]
+        p = model.predict_proba([protocol_text])[0][1]  # probability of class "risk present"
 
         rows.append({
-            "risk": risk,
+            "risk_raw": risk,
             "probability": p,
-            "present_flag": int(p >= 0.5)
+            "present_flag": int(p >= 0.5),
         })
 
     df = pd.DataFrame(rows)
 
-    # Translate risk names to English (safe fallback if not found)
-    df["risk"] = df["risk"].map(lambda x: RISK_TRANSLATION.get(x, x))
+    # Deterministic translation using the fixed mapping
+    df["Risk"] = df["risk_raw"].map(RISK_TRANSLATION).fillna(df["risk_raw"])
 
     # Convert probability to percentage
     df["Probability"] = (df["probability"] * 100).round(1).astype(str) + "%"
@@ -80,10 +82,8 @@ if protocol_text:
     # Convert binary flag to Yes / No
     df["Present"] = df["present_flag"].map({1: "Yes", 0: "No"})
 
-    # Final clean table (English only)
-    df = df[["risk", "Probability", "Present"]].rename(
-        columns={"risk": "Risk"}
-    )
+    # Final clean table
+    df = df[["Risk", "Probability", "Present"]]
 
     st.subheader("Predictions")
     st.dataframe(df, use_container_width=True)
