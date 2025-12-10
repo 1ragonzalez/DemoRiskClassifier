@@ -53,7 +53,7 @@ RISK_TRANSLATION = {
     "riesgo_biologico": "Biological Risk",
     "riesgo_tratamiento_datos": "Data Processing Risk",
     "riesgo_sistemas_seguridad_informacion": "Information Security Systems Risk",
-    "Financial Risk": "Financial Risk",
+    "riesgo_financiero": "Financial Risk",
 }
 
 # -----------------------------
