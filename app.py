@@ -3,6 +3,9 @@ import joblib
 import pandas as pd
 from io import StringIO
 
+# -----------------------------
+# Load trained artifacts
+# -----------------------------
 @st.cache_resource
 def load_artifacts():
     models = joblib.load("demo_models.pkl")
@@ -11,7 +14,11 @@ def load_artifacts():
 
 demo_models, demo_risks = load_artifacts()
 
+# -----------------------------
+# UI – Title and Introduction
+# -----------------------------
 st.title("Clinical Protocol Risk Classifier (Demo)")
+
 st.markdown(
     """
 This application provides a **demonstration-only risk classification** of clinical protocol texts using
@@ -23,8 +30,10 @@ All predictions are **illustrative**, based on a small and imbalanced experiment
 be used for real ethical, regulatory, or clinical decision-making.
 """
 )
-st.markdown("Upload a .txt file or paste protocol text to classify risks.")
 
+# -----------------------------
+# Inputs
+# -----------------------------
 text_input = st.text_area("Paste protocol text here", height=180)
 uploaded_file = st.file_uploader("Or upload a .txt file", type=["txt"])
 
@@ -34,11 +43,25 @@ if uploaded_file is not None:
 elif text_input.strip():
     protocol_text = text_input.strip()
 
+# -----------------------------
+# Risk name translation (Spanish → English)
+# -----------------------------
+RISK_TRANSLATION = {
+    "riesgo_etico": "Ethical Risk",
+    "riesgo_financiero": "Financial Risk",
+    "riesgo_legal": "Legal Risk",
+    "riesgo_privacidad": "Privacy Risk",
+    "riesgo_seguridad": "Safety Risk"
+}
+
+# -----------------------------
+# Prediction and Table
+# -----------------------------
 if protocol_text:
     rows = []
     for risk in demo_risks:
         m = demo_models[risk]
-        p = m.predict_proba([protocol_text])[0][1]  # probability of class 'risk present'
+        p = m.predict_proba([protocol_text])[0][1]  # probability of class "risk present"
 
         rows.append({
             "risk": risk,
@@ -47,6 +70,9 @@ if protocol_text:
         })
 
     df = pd.DataFrame(rows)
+
+    # Translate risk names to English (safe fallback if not found)
+    df["risk"] = df["risk"].map(lambda x: RISK_TRANSLATION.get(x, x))
 
     # Convert probability to percentage
     df["Probability"] = (df["probability"] * 100).round(1).astype(str) + "%"
