@@ -12,6 +12,17 @@ def load_artifacts():
 demo_models, demo_risks = load_artifacts()
 
 st.title("Clinical Protocol Risk Classifier (Demo)")
+st.markdown(
+    """
+This application provides a **demonstration-only risk classification** of clinical protocol texts using
+a pre-trained machine learning model. Users may upload a `.txt` file or paste protocol content directly
+to obtain probabilistic estimates for different risk categories.
+
+The system performs **inference only**: no training occurs within the app, and no uploaded text is stored.
+All predictions are **illustrative**, based on a small and imbalanced experimental dataset, and **must not**
+be used for real ethical, regulatory, or clinical decision-making.
+"""
+)
 st.markdown("Upload a .txt file or paste protocol text to classify risks.")
 
 text_input = st.text_area("Paste protocol text here", height=180)
@@ -27,19 +38,34 @@ if protocol_text:
     rows = []
     for risk in demo_risks:
         m = demo_models[risk]
-        p = m.predict_proba([protocol_text])[0][1]
+        p = m.predict_proba([protocol_text])[0][1]  # probability of class 'risk present'
+
         rows.append({
             "risk": risk,
             "probability": p,
-            "binary_flag": int(p >= 0.5)
+            "present_flag": int(p >= 0.5)
         })
 
-    df = pd.DataFrame(rows).sort_values("probability", ascending=False)
+    df = pd.DataFrame(rows)
+
+    # Convert probability to percentage
+    df["Probability"] = (df["probability"] * 100).round(1).astype(str) + "%"
+
+    # Convert binary flag to Yes / No
+    df["Present"] = df["present_flag"].map({1: "Yes", 0: "No"})
+
+    # Final clean table (English only)
+    df = df[["risk", "Probability", "Present"]].rename(
+        columns={"risk": "Risk"}
+    )
 
     st.subheader("Predictions")
     st.dataframe(df, use_container_width=True)
 
-    st.info("Demo model: trained on a small dataset. Predictions are illustrative only.")
+    st.info(
+        "Demo model: trained on a small, imbalanced dataset. "
+        "Predictions are illustrative only and not for real regulatory use."
+    )
 
 else:
     st.warning("Provide text or upload a .txt file.")
